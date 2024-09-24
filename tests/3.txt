@@ -1,0 +1,10 @@
+1234567890
+!@#$%^&*()_+{}:"<>?
+This is a    sentence with     multiple spaces.
+ThisIsAVeryLongSentenceWithoutAnySpacesWhatsoever.
+  Leading and trailing spaces
+Null characters: \0 \0 \0
+Newline characters: This\nis\na\ntest.
+Tabs\tare\tin\tthis\tsentence.
+Quotes 'single' and "double" in a sentence.
+Mixed-case Sentence With RANDOM CAPITALIZATION.

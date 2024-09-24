@@ -1,0 +1,9 @@
+This is the first sentence for testing the map-reduce process.
+Another sentence follows for testing purposes.
+Here is a third sentence with some repeated words: repeated, repeated, repeated.
+Data processing can involve many complex steps.
+Test sentence number five with some punctuation, like commas, periods, and exclamation marks!
+A random sentence with numbers: 42, 99, 1001.
+This sentence contains a mix of uppercase, lowercase, and Numbers123.
+How many words are in this sentence?
+This one tests handling of extremely long, continuous words without spaces supercalifragilisticexpialidocious.
