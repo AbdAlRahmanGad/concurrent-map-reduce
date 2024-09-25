@@ -4,6 +4,7 @@
 #include "mapreduce.h"
 #include <pthread.h>
 #include <malloc.h>
+#include <string.h>
 
 typedef struct pair{
     char *key;
@@ -13,22 +14,26 @@ typedef struct pair{
 
 Partitioner partition_algo;
 int num_partitions;
-pair *pairs;
+pair **pairs;
 
 void MR_Emit(char *key, char *value){
 
     unsigned long partition = partition_algo(key, num_partitions);
-    if(pairs[partition].key == NULL){
-        pairs[partition].key = key;
-        pairs[partition].value = value;
-        pairs[partition].next = NULL;
-        return;
+
+    if(pairs[partition]->key == NULL) {
+        pairs[partition]->key = malloc(sizeof (key));
+        strcpy(pairs[partition]->key, key);
+        pairs[partition]->value = malloc(sizeof (value));
+        strcpy(pairs[partition]->value, value);
+        pairs[partition]->next = NULL;
     }else {
         pair *p = malloc(sizeof(pair));
-        p->key = key;
-        p->value = value;
-        p->next = NULL;
-        pairs[partition].next = p;
+        p->key = malloc(strlen(key) + 1);
+        strcpy(p->key, key);
+        p->value = malloc(strlen(value) + 1);
+        strcpy(p->value, value);
+        p->next = pairs[partition]->next;
+        pairs[partition]->next = p;
     }
 }
 
@@ -78,11 +83,12 @@ void MR_Run(int argc, char *argv[],
     num_partitions = num_reducers;
     partition_algo = partition;
 
-    pairs = malloc(sizeof(pair) * num_partitions);
+    pairs = malloc(sizeof(pair *) * num_partitions);
     for (int i = 0; i < num_partitions; i++) {
-        pairs[i].key = NULL;
-        pairs[i].value = NULL;
-        pairs[i].next = NULL;
+        pairs[i] = malloc(sizeof(pair));
+        pairs[i]->key = NULL;
+        pairs[i]->value = NULL;
+        pairs[i]->next = NULL;
     }
 
     int i = 0;
@@ -98,6 +104,17 @@ void MR_Run(int argc, char *argv[],
         }
         multiple++;
     }
+    /// testin
+    puts(pairs[5]->key);
+//    while(num_partitions--) {
+        pair *p = pairs[5];
+        while (p != NULL) {
+            printf("%s %s\n", p->key, p->value);
+//            puts( p->key);
+            p = p->next;
+        }
+//    }
+    return;
 
     /// TODO SORT
     ReduceArgs reduceArgs;
