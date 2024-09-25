@@ -12,6 +12,11 @@ typedef struct pair{
     struct pair *next;
 } pair;
 
+typedef struct {
+    int partition_number;
+    Reducer reduce;
+} ReduceArgs;
+
 Partitioner partition_algo;
 int num_partitions;
 pair **pairs;
@@ -45,26 +50,41 @@ unsigned long MR_DefaultHashPartition(char *key, int num_partitions) {
     return hash % num_partitions;
 }
 
-typedef struct {
-    int partition_number;
-    Reducer reduce;
-} ReduceArgs;
+char *getter(char *key, int partition_number){
 
-void *ReduceThread(void *args){
-    /// TODO we will need locks here or in Getter or both
-    /// TODO finish this function
-
-//    ReduceArgs *reduceArgs = (ReduceArgs *)args;
-//    Reducer reduceFunction = reduceArgs->reduce;
-
-//    reduceFunction(,, reduceArgs->partition_number);
+    pair *p = pairs[partition_number];
+    while(p != NULL) {
+        if (p->key != NULL && strcmp(p->key, key) == 0) {
+            p->key = NULL;
+            return p->value;
+        }
+        p = p->next;
+    }
     return NULL;
 }
 
+void ReduceThread(void *args){
+    /// TODO we will need locks here or in Getter or both
 
+    ReduceArgs *reduceArgs = (ReduceArgs *)args;
+    Reducer reduceFunction = reduceArgs->reduce;
+    int partition_number = reduceArgs->partition_number;
+    pair *p = pairs[partition_number];
+    if (p->key == NULL) return;
+    while(p != NULL) {
+        if (p->key == NULL) {
+            p = p->next;
+            continue;
+/// TODO should we do the delete here or just after we finish the reduce function
+        }else {
+            reduceFunction(p->key, getter, partition_number);
+        }
+        p = p->next;
+    }
+}
 
 /**
- *
+ * Run mapreduce
  * @param argc number of files
  * @param argv array of file names
  * @param map map function
@@ -104,8 +124,9 @@ void MR_Run(int argc, char *argv[],
         }
         multiple++;
     }
-    /// testin
-    puts(pairs[5]->key);
+
+#ifdef testing
+    puts(pairs[0]->key);
 //    while(num_partitions--) {
         pair *p = pairs[5];
         while (p != NULL) {
@@ -115,16 +136,16 @@ void MR_Run(int argc, char *argv[],
         }
 //    }
     return;
+#endif
 
-    /// TODO SORT
-    ReduceArgs reduceArgs;
-    reduceArgs.reduce = reduce;
+    /// TODO SORT -> qsort + locality
+
+    ReduceArgs reduceArgs[num_reducers];
     for (i = 0; i < num_reducers; i++) {
-        reduceArgs.partition_number = i;
-        pthread_create(&reducers[i], NULL, (void *(*)(void *)) ReduceThread, &reduceArgs);
+        reduceArgs[i].reduce = reduce;
+        reduceArgs[i].partition_number = i;
+        pthread_create(&reducers[i], NULL, (void *(*)(void *)) ReduceThread, &reduceArgs[i]);
     }
-    /// TODO finish Getter function
-
 
     for (i = 0; i < num_reducers; i++) {
         pthread_join(reducers[i], NULL);
