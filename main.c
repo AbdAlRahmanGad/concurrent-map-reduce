@@ -1,9 +1,9 @@
-#include <stdio.h>
-#include <pthread.h>
+#include "mapreduce.h"
 #include <assert.h>
+#include <pthread.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "mapreduce.h"
 
 void Map(char *file_name) {
     FILE *fp = fopen(file_name, "r");
@@ -31,8 +31,8 @@ void Reduce(char *key, Getter get_next, int partition_number) {
 
 int main(int argc, char *argv[]) {
     MR_Run(argc, argv, Map, 1, Reduce, 10, MR_DefaultHashPartition);
-//    MR_Run(argc, argv, Map, 10, Reduce, 10, MR_DefaultHashPartition);
-//    MR_Run(argc, argv, Map, 5, Reduce, 10, MR_DefaultHashPartition);
-//    MR_Run(argc, argv, Map, 20, Reduce, 10, MR_DefaultHashPartition);
+    //    MR_Run(argc, argv, Map, 10, Reduce, 10, MR_DefaultHashPartition);
+    //    MR_Run(argc, argv, Map, 5, Reduce, 10, MR_DefaultHashPartition);
+    //    MR_Run(argc, argv, Map, 20, Reduce, 10, MR_DefaultHashPartition);
     return 0;
 }
