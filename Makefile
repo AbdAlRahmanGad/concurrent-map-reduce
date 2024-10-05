@@ -22,7 +22,7 @@ $(TARGET): $(OBJECTS)
 	$(CC) -c $< $(CFLAGS)
 
 # Debug target (with debug symbols)
-# witho no optimization
+# with no optimization
 debug: CFLAGS += -g -O0
 debug: clean $(TARGET)
 
