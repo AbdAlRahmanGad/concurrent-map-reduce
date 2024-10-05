@@ -4,6 +4,7 @@
 #include "mapreduce.h"
 #include <malloc.h>
 #include <pthread.h>
+#include <stdlib.h>
 #include <string.h>
 
 typedef struct pair {
@@ -64,7 +65,6 @@ char *getter(char *key, int partition_number) {
 }
 
 void ReduceThread(void *args) {
-    /// TODO we will need locks here or in Getter or both
 
     ReduceArgs *reduceArgs = (ReduceArgs *)args;
     Reducer reduceFunction = reduceArgs->reduce;
@@ -76,15 +76,62 @@ void ReduceThread(void *args) {
         if (p->key == NULL) {
             p = p->next;
             continue;
-            /// TODO should we do the delete here or just after we finish the
-            /// reduce function
         } else {
             reduceFunction(p->key, getter, partition_number);
         }
         p = p->next;
     }
 }
+pair *merge(pair *left, pair *right) {
+    if (!left)
+        return right;
+    if (!right)
+        return left;
 
+    pair *result = NULL;
+
+    if (strcmp(left->key, right->key) <= 0) {
+        result = left;
+        result->next = merge(left->next, right);
+    } else {
+        result = right;
+        result->next = merge(left, right->next);
+    }
+
+    return result;
+}
+
+pair *getMiddle(pair *head) {
+    if (head == NULL)
+        return head;
+
+    pair *slow = head;
+    pair *fast = head->next;
+
+    while (fast != NULL && fast->next != NULL) {
+        slow = slow->next;
+        fast = fast->next->next;
+    }
+
+    return slow;
+}
+
+pair *mergeSort(pair *head) {
+    if (head == NULL || head->next == NULL)
+        return head;
+
+    pair *middle = getMiddle(head);
+    pair *nextToMiddle = middle->next;
+
+    middle->next = NULL;
+
+    pair *left = mergeSort(head);
+    pair *right = mergeSort(nextToMiddle);
+
+    pair *sortedList = merge(left, right);
+
+    return sortedList;
+}
 /**
  * Run mapreduce
  * @param argc number of files
@@ -129,20 +176,20 @@ void MR_Run(int argc, char *argv[], Mapper map, int num_mappers, Reducer reduce,
         multiple++;
     }
 
-#ifdef testing
-    puts(pairs[0]->key);
-    //    while(num_partitions--) {
-    pair *p = pairs[5];
-    while (p != NULL) {
-        printf("%s %s\n", p->key, p->value);
-        //            puts( p->key);
-        p = p->next;
+    for (int i = 0; i < num_partitions; i++) {
+        pairs[i] = mergeSort(pairs[i]);
     }
-    //    }
+
+#ifdef TESTING
+    while (num_partitions--) {
+        pair *p = pairs[num_partitions];
+        while (p != NULL) {
+            printf("%s %s\n", p->key, p->value);
+            p = p->next;
+        }
+    }
     return;
 #endif
-
-    /// TODO SORT -> qsort + locality
 
     ReduceArgs reduceArgs[num_reducers];
     for (i = 0; i < num_reducers; i++) {
@@ -154,5 +201,16 @@ void MR_Run(int argc, char *argv[], Mapper map, int num_mappers, Reducer reduce,
 
     for (i = 0; i < num_reducers; i++) {
         pthread_join(reducers[i], NULL);
+    }
+
+    for (int i = 0; i < num_partitions; i++) {
+        pair *p = pairs[i];
+        while (p != NULL) {
+            pair *temp = p;
+            p = p->next;
+            free(temp->key);
+            free(temp->value);
+            free(temp);
+        }
     }
 }

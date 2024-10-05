@@ -1,6 +1,9 @@
 # Compiler and flags
 CC=gcc
 CFLAGS=-Wall -Werror -pthread -O
+ifeq ($(TESTING),1)
+	CFLAGS += -DTESTING
+endif
 
 # Targets
 TARGET=concurrent_map_reduce
